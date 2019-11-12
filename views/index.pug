@@ -24,20 +24,19 @@ block content
                 button.btn.btn-primary(type='submit') Entrar
         div.col-3
   script.
-    document.getElementById('login-form').addEventListener('submit', e => {
-        e.preventDefault();
-        const email = $('#email-area').val();
-        const captcha = $('#recaptcha-accessible-status').val();
-        console.log(email + captcha);
-        return fetch('/validate', {
-          method: 'POST',
-          headers: { 'Content-type': 'application/json' },
-          body: JSON.stringify({ email, captcha })
-        })
-          .then(res => res.json())
-          .then(data => {
-            console.log(data);
-            alert(data.msg);
-            if (data.success) return location.reload();
-          });
-      });
+    $('#login-form').submit( e => {
+      e.preventDefault();
+      const email = $('#email-area').val();
+      const captcha = $('#g-recaptcha-response').val();
+      return fetch('/validate', {
+        method: 'POST',
+        headers: { 'Content-type': 'application/json' },
+        body: JSON.stringify({ email, captcha })
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log(data);
+          alert('Captcha: ' + data.msg);
+          if (data.success) return location.reload();
+        });
+    });

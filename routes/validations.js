@@ -1,28 +1,46 @@
 var express = require('express');
 var router = express.Router();
+const { stringify } = require('querystring');
+const fetch = require('node-fetch');
 
-router.post('/', function(req, rest, next) {
-    if (
-      req.body.captcha === undefined||
-      req.body.captcha === '' ||
-      req.body.captcha === null
-    ) {
-      return res.json({'success': false, 'msg': 'Est� errado!'});
-    }
+const decriptation = require('../src/decriptation');
+const crypto = require('crypto');
+
+// faz requisição através de post
+router.post('/', async function(req, res, next) {
   
-    const secretKey = '6LeAMMIUAAAAAOxxOry9jwqhX63--vDOsENycbFE';
+  // Verifica se o Captcha foi preenchido
+  if (!req.body.captcha) {
+    return res.json({ success: false, msg: 'Por favor, valide o Captcha' });
+  }
   
-    const verifyUrl = `https://google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${req.body.captcha}&remoteip=${req.connection.remoteAddress}`;
+  // Faz a criptografia do email
+  const key = crypto.randomBytes(32);
+  const iv = crypto.randomBytes(16);
+  var dataEncrypted = decriptation.encrypt(req.body.email, key, iv);
+  console.log(dataEncrypted);
+  console.log(decriptation.decrypt(dataEncrypted, key));
+
+  // Chave privada da API do ReCaptcha
+  const secretKey = '6LeAMMIUAAAAAOxxOry9jwqhX63--vDOsENycbFE';
   
-    request(verifyUrl, (err, response, body) => {
-      body = JSON.parse(body);
+  // Constroi a URL para verificar com o ReCaptcha do Google
+  const query = stringify({
+    secret: secretKey,
+    response: req.body.captcha,
+    remoteip: req.connection.remoteAddress
+  });
+  const verifyURL = `https://google.com/recaptcha/api/siteverify?${query}`;
   
-      if (body.success !== undefined && !body.success) {
-        return res.json({'success': false, 'msg': 'Captcha falhou'});
-      }
-  
-      return res.json({'success': true, 'msg': 'Captcha passou'});
-    });
+  // Faz a requisição para veirificar a URL, se é do dono do projeto e se o catpcha está certo
+  const body = await fetch(verifyURL).then(res => res.json());
+
+  // Se não der certo
+  if (body.success !== undefined && !body.success)
+    return res.json({ success: false, msg: 'Falhou ao validar o Captcha' });
+
+  // Se der certo
+  return res.json({ success: true, msg: 'Testes do Captcha passaram'});
 });
 
 module.exports = router;
