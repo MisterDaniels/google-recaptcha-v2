@@ -1,0 +1,43 @@
+extends layout
+
+block content
+  div.d-flex.align-items-center.justify-content-center(style={height: '800px'})
+    div.container
+      div.row.justify-content-center
+        div.col-3
+        div.col-6
+          div.card
+            div.card-header.bg-primary
+              h5.text-center.text-white Sistema de segurança
+            div.card-body
+              h5.card-title.text-center.font-weight-bold Login
+              form#login-form
+                div.form-group
+                  label(for='email-area') Endereço de Email
+                  input.form-control(type='email', id='email-area', aria-describeby='email-help', placeholder='Insira o email')
+                  small.form-text.text-muted(id='email-help') Não vamos compartilhar o seu endereço de email com ninguém
+                div.form-group
+                  label(for='password-area') Senha
+                  input.form-control(type='password', id='password-area', placeholder='Insira a senha')
+                div.form-group
+                  div.g-recaptcha(data-sitekey='6LeAMMIUAAAAAEpp_SlG0T6HBe3adwV-taQ7nSIZ')
+                button.btn.btn-primary(type='submit') Entrar
+        div.col-3
+  script.
+    document.getElementById('login-form').addEventListener('submit', e => {
+        e.preventDefault();
+        const email = $('#email-area').val();
+        const captcha = $('#recaptcha-accessible-status').val();
+        console.log(email + captcha);
+        return fetch('/validate', {
+          method: 'POST',
+          headers: { 'Content-type': 'application/json' },
+          body: JSON.stringify({ email, captcha })
+        })
+          .then(res => res.json())
+          .then(data => {
+            console.log(data);
+            alert(data.msg);
+            if (data.success) return location.reload();
+          });
+      });
